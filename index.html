@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NIDS Lab — Hybrid Network Intrusion Detection</title>
+<meta name="description" content="Interactive research lab for a hybrid supervised + autoencoder Network Intrusion Detection System on NSL-KDD, with live simulation, in-browser model training and recent literature." />
+<style>
+:root{--bg:#141925;--bg2:#171d2a;--surface:#1c2332;--surface2:#232b3d;--border:#2d3750;--text:#e6ebf5;--muted:#93a0b8;--teal:#3ddbb8;--amber:#ffb547;--red:#ff5d6c;--blue:#6ea8ff;--pink:#e58bff;--r:16px;--mono:"Geist Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Geist,system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;background-image:radial-gradient(1200px 600px at 85% -10%,rgba(61,219,184,.08),transparent 60%),radial-gradient(900px 500px at -10% 30%,rgba(110,168,255,.07),transparent 60%)}
+a{color:var(--teal)}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}.small{font-size:13px}
+.txt-bad{color:var(--red)}.txt-ok{color:var(--teal)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);background:rgba(20,25,37,.72);border-bottom:1px solid rgba(45,55,80,.6)}
+.nav .wrap{display:flex;align-items:center;gap:18px;height:58px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.brand i{width:26px;height:26px;border-radius:8px;background:conic-gradient(from 210deg,var(--teal),var(--blue),var(--teal));display:grid;place-items:center;font-style:normal;color:#0d1320;font-size:12px;font-weight:800}
+.nav ul{display:flex;gap:2px;list-style:none;margin:0 0 0 auto;padding:0;overflow-x:auto;scrollbar-width:none}
+.nav ul::-webkit-scrollbar{display:none}
+.nav a{display:block;padding:6px 11px;border-radius:999px;text-decoration:none;color:var(--muted);font-size:13.5px;white-space:nowrap;transition:.25s}
+.nav a:hover{color:var(--text)}.nav a.active{color:#0f1622;background:var(--teal)}
+
+/* hero */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
+#heroCanvas{position:absolute;inset:0;width:100%;height:100%;opacity:.9}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 25%,rgba(20,25,37,.4) 70%,transparent),linear-gradient(0deg,var(--bg),transparent 35%);pointer-events:none}
+.hero .wrap{position:relative;z-index:2;padding-top:84px;padding-bottom:72px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal)}
+h1{font-size:clamp(38px,6.4vw,76px);line-height:1.02;letter-spacing:-.035em;margin:14px 0 18px;max-width:880px;font-weight:650}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--teal),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:clamp(16px,1.6vw,19px);color:#c5cee0;max-width:640px;margin:0 0 28px}
+.cta{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--surface);padding:10px 16px;border-radius:12px;cursor:pointer;text-decoration:none;color:var(--text);font-weight:500;transition:transform .2s,background .2s,border-color .2s}
+.btn:hover{transform:translateY(-1px);border-color:#3b4868;background:var(--surface2)}
+.btn.primary{background:var(--teal);color:#0d1622;border-color:var(--teal)}
+.btn.primary:hover{background:#5ae6c7}
+.btn:disabled{opacity:.55;cursor:progress;transform:none}
+.team{display:flex;flex-wrap:wrap;gap:8px;margin-top:34px}
+.team span{font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:rgba(28,35,50,.7);color:#c5cee0}
+.team span b{color:var(--text);font-weight:600;margin-right:6px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:46px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;max-width:880px}
+.kpi{background:rgba(23,29,42,.88);padding:18px 20px}
+.kpi b{display:block;font-size:30px;letter-spacing:-.02em;font-weight:650}
+.kpi span{font-size:12.5px;color:var(--muted)}
+.kpi:nth-child(4) b{color:var(--teal)}
+
+/* sections */
+section{padding:96px 0;border-bottom:1px solid rgba(45,55,80,.5)}
+.sec-head{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:38px;max-width:780px}
+h2{font-size:clamp(28px,3.6vw,44px);line-height:1.08;letter-spacing:-.025em;margin:0;font-weight:640}
+.sec-head p{margin:0;color:#c0c9db;font-size:17px}
+h3{margin:0 0 8px;font-size:18px;letter-spacing:-.01em}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+
+/* problem */
+.compare{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}
+.io{display:grid;gap:12px}
+.io .card{display:flex;gap:16px;align-items:flex-start}
+.io .ic{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:700}
+.ic.t{background:rgba(61,219,184,.14);color:var(--teal)}.ic.a{background:rgba(255,181,71,.14);color:var(--amber)}.ic.r{background:rgba(255,93,108,.14);color:var(--red)}
+.io p{margin:0;color:#c0c9db;font-size:15px}
+.seg{display:flex;flex-wrap:wrap;gap:6px;background:var(--bg2);border:1px solid var(--border);padding:4px;border-radius:12px;width:fit-content}
+.seg button{border:0;background:transparent;padding:7px 12px;border-radius:9px;cursor:pointer;color:var(--muted);font-size:13.5px;transition:.2s}
+.seg button[aria-pressed="true"]{background:var(--surface2);color:var(--text);box-shadow:inset 0 0 0 1px #3b4868}
+#sigGrid{display:grid;grid-template-columns:repeat(10,1fr);gap:7px;margin:18px 0 14px}
+.tile{aspect-ratio:1;border-radius:7px;border:1px dashed #3b4868;background:var(--bg2);transition:background .45s,border-color .45s,box-shadow .45s,transform .45s}
+.tile.unseen{border-style:solid;border-color:rgba(255,255,255,.22)}
+.tile.caught{background:rgba(61,219,184,.85);border-color:var(--teal);box-shadow:0 0 14px rgba(61,219,184,.35);transform:scale(.92)}
+.tile.unseen.caught{background:rgba(255,181,71,.9);border-color:var(--amber);box-shadow:0 0 14px rgba(255,181,71,.35)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+#sigStat{font-size:14px;color:#c0c9db}
+
+/* pipeline */
+#pipeline{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;position:relative}
+.pipe-step{position:relative;text-align:left;border:1px solid var(--border);background:var(--surface);border-radius:14px;padding:14px;cursor:pointer;transition:.3s;display:flex;flex-direction:column;gap:4px;min-height:132px}
+.pipe-step:not(:last-child)::after{content:"";position:absolute;top:50%;right:-11px;width:12px;height:2px;background:linear-gradient(90deg,var(--teal),transparent);background-size:200% 100%;animation:flow 1.6s linear infinite}
+@keyframes flow{to{background-position:-200% 0}}
+.pipe-step:hover{border-color:#3e4c6d;transform:translateY(-2px)}
+.pipe-step[aria-pressed="true"]{border-color:var(--teal);background:linear-gradient(180deg,rgba(61,219,184,.12),var(--surface))}
+.pipe-n{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.pipe-k{font-size:19px;font-weight:650;letter-spacing:-.01em}
+.pipe-t{font-size:12.5px;color:var(--muted);line-height:1.35}
+.pipe-step:nth-child(4) .pipe-k{color:var(--blue)}.pipe-step:nth-child(5) .pipe-k{color:var(--teal)}.pipe-step:nth-child(6) .pipe-k{color:var(--amber)}
+#pipeDetail{margin-top:16px}
+#pipeDetail.swap{animation:swap .5s ease}
+@keyframes swap{from{opacity:0;transform:translateY(8px)}}
+#pipeDetail p{margin:6px 0 0;color:#c0c9db;max-width:820px}
+.cite{font-family:var(--mono);font-size:12.5px;color:var(--amber)!important}
+
+/* sim */
+.sim{display:grid;grid-template-columns:1fr 330px;gap:18px}
+.stage{position:relative;background:radial-gradient(800px 300px at 50% 50%,rgba(61,219,184,.05),transparent),var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.stage-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+#simCanvas{display:block;width:100%;height:440px;cursor:crosshair}
+#simTip{position:absolute;max-width:240px;background:rgba(14,19,30,.96);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12.5px;pointer-events:none;display:flex;flex-direction:column;gap:3px;z-index:3;color:#c5cee0}
+#simTip strong{color:var(--text)}
+.timeline{border-top:1px solid var(--border);padding:10px 14px 12px}
+.timeline .lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px}
+#scoreCanvas{display:block;width:100%;height:92px}
+.panel{display:flex;flex-direction:column;gap:14px}
+.attacks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.atk{border:1px solid var(--border);background:var(--surface2);border-radius:11px;padding:9px 10px;text-align:left;cursor:pointer;transition:.2s;display:flex;flex-direction:column;gap:1px}
+.atk b{font-size:13.5px;font-weight:600}.atk span{font-size:11.5px;color:var(--muted)}
+.atk:hover{transform:translateY(-1px)}.atk:active{transform:scale(.97)}
+.atk[data-attack="dos"]{border-left:3px solid var(--red)}.atk[data-attack="probe"]{border-left:3px solid var(--blue)}.atk[data-attack="r2l"]{border-left:3px solid var(--amber)}.atk[data-attack="u2r"]{border-left:3px solid var(--pink)}.atk[data-attack="zero"]{border-left:3px solid #fff;grid-column:span 2}
+.ctl{display:grid;gap:4px}
+.ctl label{display:flex;justify-content:space-between;font-size:13px;color:#c0c9db}
+.ctl output{font-family:var(--mono);color:var(--teal);font-size:12.5px}
+input[type=range]{width:100%;accent-color:var(--teal)}
+.toggles{display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:#c0c9db}
+.toggles input{accent-color:var(--teal);margin-right:8px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+.stat span{display:block;font-size:11px;color:var(--muted)}.stat b{font-family:var(--mono);font-size:16px}
+.stat.g b{color:var(--teal)}.stat.r b{color:var(--red)}.stat.a b{color:var(--amber)}
+#modeNote{font-size:13.5px;color:#c0c9db;margin:0;padding:10px 12px;background:rgba(61,219,184,.07);border:1px solid rgba(61,219,184,.25);border-radius:10px}
+#alertLog{list-style:none;margin:0;padding:0;max-height:210px;overflow:auto;font-family:var(--mono);font-size:11.5px;display:flex;flex-direction:column;gap:3px}
+#alertLog li{display:flex;gap:8px;padding:5px 8px;border-radius:7px;background:var(--bg2);animation:swap .35s ease;border-left:2px solid var(--muted)}
+#alertLog time{color:var(--muted);flex:none}
+.log-hit{border-left-color:var(--red)!important}.log-fp{border-left-color:var(--amber)!important}.log-miss{border-left-color:#fff!important;background:rgba(255,93,108,.12)!important}.log-info{border-left-color:var(--blue)!important}
+.sim-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);padding:10px 14px;border-top:1px solid var(--border)}
+.sim-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+
+/* lab */
+.lab-top{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+#drop{border:1.5px dashed #3b4868;border-radius:14px;padding:18px;text-align:center;transition:.25s;cursor:pointer;background:var(--bg2)}
+#drop.over{border-color:var(--teal);background:rgba(61,219,184,.07)}
+#drop p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+textarea{width:100%;min-height:74px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;font-family:var(--mono);font-size:12px;resize:vertical}
+select{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:7px 10px}
+.ds-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}
+.ds-stats div{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:10px 12px}
+.ds-stats span{display:block;font-size:11.5px;color:var(--muted)}.ds-stats b{font-size:19px;font-family:var(--mono)}
+.err{color:var(--red);font-size:13.5px;margin:10px 0 0}
+[role=tablist]{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto}
+[role=tab]{border:0;background:none;padding:11px 16px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500;white-space:nowrap}
+[role=tab][aria-selected=true]{color:var(--text);border-bottom-color:var(--teal)}
+.chart-box{position:relative;height:300px}
+.chart-box.sm{height:220px}.chart-box.lg{height:380px}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;max-height:360px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:8px 10px;border-bottom:1px solid rgba(45,55,80,.6);text-align:left;white-space:nowrap}
+thead th{position:sticky;top:0;background:var(--surface2);font-weight:600;font-family:var(--mono);font-size:11.5px;color:#c0c9db}
+#preview td{font-family:var(--mono)}
+.lbl-n{color:var(--teal)}.lbl-a{color:var(--red)}
+#mwOut{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+#mwOut div{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+#mwOut span{display:block;font-size:11.5px;color:var(--muted)}#mwOut b{font-family:var(--mono)}
+#mwOut .ok{color:var(--teal)}#mwOut .warn{color:var(--amber)}
+.mw-note{grid-column:1/-1;margin:2px 0 0;font-size:13.5px;color:#c0c9db}
+.train-ctl{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:16px;align-items:end}
+.progress{height:4px;background:var(--bg2);border-radius:4px;overflow:hidden;margin-top:14px}
+#trainProg{height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--blue));transition:width .4s}
+#trainStatus{font-size:13px;color:var(--muted);margin-top:6px;font-family:var(--mono)}
+#metricsBody tr.hl{background:rgba(61,219,184,.08)}#metricsBody th{font-family:Geist,system-ui;font-size:13px}
+#metricsBody td{font-family:var(--mono)}
+#cm{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;margin-top:12px}
+.cm-h{font-size:12px;color:var(--muted);display:flex;align-items:center;justify-content:center;padding:4px}
+.cm-h.side{justify-content:flex-end;text-align:right}
+.cm-cell{border-radius:12px;padding:16px 10px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.cm-cell b{font-size:24px;font-family:var(--mono)}.cm-cell span{font-size:11.5px;opacity:.85}
+.cm-cell.good{background:rgba(61,219,184,calc(var(--a)*.55));color:#eafff9}
+.cm-cell.bad{background:rgba(255,93,108,calc(var(--a)*.8 + .15))}
+.cm-cell.warn{background:rgba(255,181,71,calc(var(--a)*.8 + .12))}
+.note{padding:12px 14px;border-radius:11px;background:rgba(255,93,108,.08);border:1px solid rgba(255,93,108,.3);font-size:14px;color:#e2c6cb;margin-top:14px}
+.conn-head{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.conn-head div{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:3px}
+.conn-head span{font-size:11.5px}.conn-head b{font-family:var(--mono);font-size:14px}
+.pill{display:inline-block;width:fit-content;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:999px}
+.pill-bad{background:rgba(255,93,108,.18);color:var(--red)}.pill-ok{background:rgba(61,219,184,.15);color:var(--teal)}
+.shap{list-style:none;padding:0;margin:8px 0;display:grid;gap:6px}
+.shap li{display:grid;grid-template-columns:minmax(120px,190px) 1fr 60px 90px;gap:10px;align-items:center;font-size:12.5px}
+.shap code{font-family:var(--mono);color:#c5cee0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shap-bar{position:relative;height:10px;background:var(--bg2);border-radius:5px}
+.shap-bar::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:#3b4868}
+.shap-bar i{position:absolute;top:0;bottom:0;width:var(--w);border-radius:5px;animation:grow .6s ease}
+.shap-bar i.pos{left:50%;background:var(--red)}.shap-bar i.neg{right:50%;background:var(--teal)}
+@keyframes grow{from{width:0}}
+.shap em{font-family:var(--mono);font-style:normal;text-align:right}.shap small{color:var(--muted);font-family:var(--mono)}
+.empty{padding:40px;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:var(--r)}
+
+/* concepts */
+.concept{position:relative;overflow:hidden}
+.concept .k{font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:.1em;text-transform:uppercase}
+.concept p{margin:6px 0 0;color:#c0c9db;font-size:14.5px}
+.formula{font-family:var(--mono);font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:8px 10px;margin-top:12px;color:#d7deeb}
+#prCanvas{width:100%;height:170px;display:block;margin-top:10px;background:var(--bg2);border-radius:12px;border:1px solid var(--border)}
+.pr-out{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.pr-out div{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+.pr-out span{display:block;font-size:11.5px;color:var(--muted)}.pr-out b{font-family:var(--mono);font-size:20px}
+
+/* research */
+#paperFilters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.chip{border:1px solid var(--border);background:var(--surface);padding:7px 14px;border-radius:999px;cursor:pointer;font-size:13.5px;color:var(--muted);transition:.2s}
+.chip[aria-pressed=true]{background:var(--text);color:#141925;border-color:var(--text)}
+#papers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.paper{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:6px;animation:rise .6s cubic-bezier(.2,.7,.2,1) both;transition:transform .3s,border-color .3s}
+.paper:hover{transform:translateY(-3px);border-color:#3e4c6d}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.paper header{display:flex;justify-content:space-between;align-items:center}
+.tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--surface2)}
+.tag-GNN{color:var(--blue)}.tag-LLM{color:var(--pink)}.tag-Data{color:var(--amber)}.tag-FL{color:#9be15d}.tag-Eval{color:var(--red)}.tag-XAI,.tag-AE{color:var(--teal)}
+.yr{font-family:var(--mono);font-size:12px;color:var(--muted)}.yr i{font-style:normal;color:#0f1622;background:var(--teal);padding:1px 6px;border-radius:5px;margin-left:4px;font-size:10px;font-weight:700}
+.paper h3{font-size:16px;line-height:1.35;margin:4px 0 0}
+.auth{font-size:12.5px;color:var(--muted);margin:0}
+.paper>p{font-size:14px;color:#c0c9db;margin:0}
+details{margin-top:auto;padding-top:6px}
+summary{cursor:pointer;font-size:13px;color:var(--teal);font-weight:500}
+details p{font-size:13.5px;color:#c0c9db;margin:6px 0 0}
+
+/* results */
+.res-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;align-items:stretch}
+.big-num{font-size:clamp(56px,8vw,96px);font-weight:700;letter-spacing:-.04em;line-height:1;background:linear-gradient(90deg,var(--teal),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* journey */
+.journey{position:relative;display:grid;gap:18px;padding-left:34px}
+.journey::before{content:"";position:absolute;left:11px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--teal),var(--blue) 60%,rgba(147,160,184,.2))}
+.step{position:relative}
+.step::before{content:"";position:absolute;left:-29px;top:24px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--teal);box-shadow:0 0 0 4px rgba(61,219,184,.12)}
+.step.next::before{border-color:var(--muted);box-shadow:none}
+.step.now::before{background:var(--amber);border-color:var(--amber);box-shadow:0 0 0 6px rgba(255,181,71,.18);animation:ping 2s infinite}
+@keyframes ping{50%{box-shadow:0 0 0 10px rgba(255,181,71,0)}}
+.step .card{display:grid;grid-template-columns:170px 1fr 1fr;gap:20px}
+.step .ph{font-family:var(--mono);font-size:12px;color:var(--teal)}
+.step.next .ph{color:var(--muted)}.step.now .ph{color:var(--amber)}
+.step h3{font-size:17px}
+.step p,.step li{color:#c0c9db;font-size:14px;margin:0}
+.step ul{margin:0;padding-left:18px}
+.lesson{border-left:2px solid var(--border);padding-left:14px}
+.lesson b{display:block;font-size:11.5px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+
+/* refs */
+#refs{display:grid;gap:26px}
+.ref-group h3{font-size:14px;font-family:var(--mono);color:var(--teal);text-transform:uppercase;letter-spacing:.1em;font-weight:500}
+.ref-group ol{margin:0;padding-left:22px;display:grid;gap:8px}
+.ref-group li{font-size:14px;color:#c0c9db}
+.ref-group li>span{margin-right:10px}
+.copy{border:1px solid var(--border);background:var(--surface);border-radius:7px;font-size:11.5px;padding:2px 9px;cursor:pointer;color:var(--muted)}
+.copy:hover{color:var(--text)}
+footer{padding:40px 0 60px;color:var(--muted);font-size:13px}
+
+@media (max-width:1000px){
+  #pipeline{grid-template-columns:repeat(4,1fr)}.pipe-step:nth-child(4)::after{display:none}
+  .sim{grid-template-columns:1fr}.res-grid,.compare,.lab-top{grid-template-columns:1fr}
+  #papers{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}
+  .train-ctl{grid-template-columns:1fr 1fr}.conn-head{grid-template-columns:repeat(3,1fr)}
+  .step .card{grid-template-columns:1fr}
+}
+@media (max-width:680px){
+  section{padding:68px 0}.kpis{grid-template-columns:1fr 1fr}.grid2,.grid3,#papers{grid-template-columns:1fr}
+  #pipeline{grid-template-columns:1fr 1fr}.pipe-step::after{display:none}
+  .ds-stats{grid-template-columns:repeat(2,1fr)}#mwOut{grid-template-columns:1fr 1fr}
+  #simCanvas{height:360px}.stats{grid-template-columns:repeat(2,1fr)}
+  .shap li{grid-template-columns:1fr 1fr;}.shap small{display:none}
+  .conn-head{grid-template-columns:1fr 1fr}.train-ctl{grid-template-columns:1fr}
+  .nav ul{display:none}
+}
+
+/* ---- smooth scroll + scroll-driven text colour ---- */
+:root{--hue:165;--scroll-accent:hsl(var(--hue) 85% 62%)}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+#scrollBar{position:fixed;top:0;left:0;height:3px;width:100%;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,var(--teal),var(--blue),var(--pink));z-index:100;pointer-events:none;will-change:transform}
+/* headings and eyebrows shift colour as you scroll down the page */
+h2{color:var(--scroll-accent);transition:color .35s ease}
+.eyebrow{color:var(--scroll-accent);transition:color .35s ease}
+/* body text fades from muted to bright when a section scrolls into view */
+.sec-head p,.io p,.concept p,#pipeDetail p,.paper>p,.step p,.step li,.ref-group li{transition:color .9s ease}
+.reveal:not(.in) p,.reveal:not(.in) li{color:var(--muted)}
+.reveal.in p,.reveal.in li{color:#eef2fa}
+@media (prefers-reduced-motion:reduce){#scrollBar{display:none}h2,.eyebrow{transition:none}}
+/* ---- hero redesign ---- */
+body{overflow-x:clip}
+.hero{border-bottom:1px solid var(--border);background:radial-gradient(900px 500px at 90% 10%,rgba(255,181,71,.10),transparent 60%),radial-gradient(800px 500px at 0% 100%,rgba(229,139,255,.09),transparent 60%)}
+.hero::after{background:linear-gradient(0deg,var(--bg),transparent 30%)}
+.hero .wrap.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:center;padding-top:72px;padding-bottom:64px}
+.hero-copy{min-width:0}
+.pill-eyebrow{display:inline-flex;align-items:center;gap:10px;padding:6px 14px;border-radius:999px;border:1px solid rgba(255,181,71,.35);background:rgba(255,181,71,.08);color:var(--amber)!important;font-size:11px}
+.pill-eyebrow .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 0 rgba(255,181,71,.6);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 10px rgba(255,181,71,0)}100%{box-shadow:0 0 0 0 rgba(255,181,71,0)}}
+.hero h1{font-size:clamp(36px,5.2vw,64px);line-height:1.06;letter-spacing:-.03em;font-weight:700;margin:22px 0 18px;color:#fff}
+.hero h1 em{background:linear-gradient(95deg,var(--amber),var(--red) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block}
+.hero .lede{font-size:clamp(16px,1.5vw,18px);color:#b9c4da;max-width:560px}
+.btn.primary{background:linear-gradient(95deg,var(--amber),#ff8a5b);border-color:transparent;color:#1a1208;font-weight:600}
+.btn.primary:hover{background:linear-gradient(95deg,#ffc468,#ff9a72)}
+.btn.ghost{background:transparent;border-color:#46547a}
+.hero .team{margin-top:28px}
+.hero .team span{background:transparent;border-style:dashed}
+/* terminal card */
+.term{border:1px solid var(--border);border-radius:var(--r);background:rgba(12,16,26,.82);backdrop-filter:blur(8px);box-shadow:0 30px 60px -20px rgba(0,0,0,.6),0 0 0 1px rgba(255,181,71,.06);overflow:hidden;transform:rotate(1.2deg)}
+.term-bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--border);background:rgba(35,43,61,.6)}
+.term-bar i{width:10px;height:10px;border-radius:50%;background:#46547a}
+.term-bar i:nth-child(1){background:var(--red)}.term-bar i:nth-child(2){background:var(--amber)}.term-bar i:nth-child(3){background:var(--teal)}
+.term-bar span{margin-left:8px;font-size:12px;color:var(--muted)}
+.term-body{list-style:none;margin:0;padding:16px;display:grid;gap:9px;font-size:12.5px;color:#c5cee0}
+.term-body li{opacity:0;animation:feed .5s ease forwards;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.term-body li:nth-child(1){animation-delay:.3s}.term-body li:nth-child(2){animation-delay:.8s}.term-body li:nth-child(3){animation-delay:1.3s}.term-body li:nth-child(4){animation-delay:1.8s}.term-body li:nth-child(5){animation-delay:2.3s}.term-body li:nth-child(6){animation-delay:2.8s}.term-body li:nth-child(7){animation-delay:3.3s}
+@keyframes feed{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.term-body b{display:inline-block;min-width:54px;margin-right:8px;font-weight:700}
+.term-body .ok{color:var(--teal)}.term-body .bad{color:var(--red)}.term-body .zero{color:var(--amber);text-shadow:0 0 12px rgba(255,181,71,.5)}
+/* KPI cards */
+.hero .kpis{grid-column:1/-1;max-width:none;margin-top:8px;background:transparent;border:0;border-radius:0;gap:14px;overflow:visible}
+.hero .kpi{border:1px solid var(--border);border-top:3px solid var(--blue);border-radius:14px;background:rgba(23,29,42,.85)}
+.hero .kpi:nth-child(2){border-top-color:var(--pink)}.hero .kpi:nth-child(3){border-top-color:var(--red)}.hero .kpi:nth-child(4){border-top-color:var(--amber)}
+.hero .kpi:nth-child(4) b{color:var(--amber)}
+@media (max-width:1000px){.hero .wrap.hero-grid{grid-template-columns:1fr}.term{transform:none;max-width:560px}}
+@media (prefers-reduced-motion:reduce){.term-body li{animation:none;opacity:1}.pill-eyebrow .dot{animation:none}}
+</style>
+<link rel="stylesheet" href="./fx.css">
+</head>
+<body>
+<div id="scrollBar" aria-hidden="true"></div>
+
+<nav class="nav" aria-label="Sections">
+  <div class="wrap">
+    <div class="brand"><i aria-hidden="true">ID</i>NIDS<span class="muted">/lab</span></div>
+    <ul>
+      <li><a href="#problem" data-goto="problem">Problem</a></li>
+      <li><a href="#system" data-goto="system">System</a></li>
+      <li><a href="#live" data-goto="live">Live sketch</a></li>
+      <li><a href="#lab" data-goto="lab">Dataset lab</a></li>
+      <li><a href="#concepts" data-goto="concepts">Concepts</a></li>
+      <li><a href="#results" data-goto="results">Results</a></li>
+      <li><a href="#research" data-goto="research">Research</a></li>
+      <li><a href="#journey" data-goto="journey">Journey</a></li>
+      <li><a href="#refs-sec" data-goto="refs-sec">References</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero">
+  <canvas id="heroCanvas" aria-hidden="true"></canvas>
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow pill-eyebrow"><i class="dot" aria-hidden="true"></i>Data Science Mid Review · R.V. College of Engineering</span>
+      <h1>Stop the attacks <em>nobody has seen before.</em></h1>
+      <p class="lede">A hybrid Network Intrusion Detection System. Supervised models recognise known attack families; an autoencoder trained only on normal traffic flags everything else, including zero-days.</p>
+      <div class="cta">
+        <a class="btn primary" href="#live" data-goto="live">▶ Launch the live sketch</a>
+        <a class="btn ghost" href="#lab" data-goto="lab">Train on your data →</a>
+      </div>
+      <div class="team" aria-label="Team">
+        <span><b>Sharanya V</b>1RUA25CSE0433</span>
+        <span><b>Sannidhi M</b>1RUA25CSE0430</span>
+        <span><b>Rishitha G C</b>1RUA25CSE0383</span>
+      </div>
+    </div>
+    <aside class="term" aria-label="Example detection feed">
+      <div class="term-bar"><i></i><i></i><i></i><span class="mono">nids ~ live-feed</span></div>
+      <ul class="term-body mono" id="termFeed" aria-label="Simulated detection events"></ul>
+      <div class="term-foot mono"><span class="live">live · simulated</span><span>scanned <b id="tScan">0</b></span><span>flagged <b id="tBlock">0</b></span><span>0-day <b id="tZero">0</b></span><button class="term-btn" id="tInject" type="button">⚡ inject zero-day</button></div>
+    </aside>
+    <div class="kpis">
+      <div class="kpi"><b data-count="125973">0</b><span>training connections (NSL-KDD)</span></div>
+      <div class="kpi"><b data-count="22544">0</b><span>test connections</span></div>
+      <div class="kpi"><b data-count="17">0</b><span>attack types unseen in training</span></div>
+      <div class="kpi"><b data-count="78" data-suffix="%">0</b><span>unseen attacks caught by the autoencoder</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">// 01 · Problem statement</span><h2>Signatures only know the past.</h2><p>Signature-based IDS match traffic against a library of known patterns. Novel or zero-day attacks match nothing — so they pass through undetected.</p></div>
+    <div class="compare">
+      <div class="io reveal">
+        <div class="card"><span class="ic t">IN</span><div><h3>Input</h3><p>Network connection records described by 41 engineered features — byte counts, error rates, service type, host-level traffic statistics.</p></div></div>
+        <div class="card"><span class="ic a">OUT</span><div><h3>Output</h3><p>A Normal / Attack classification, plus an anomaly score for traffic that matches no known signature.</p></div></div>
+        <div class="card"><span class="ic r">∪</span><div><h3>Hybrid approach</h3><p>Supervised models for known attack signatures <b>+</b> an unsupervised autoencoder as a safety net for attacks never seen before.</p></div></div>
+      </div>
+      <div class="card reveal">
+        <h3>Try it: who catches what?</h3>
+        <p class="muted small" style="margin:0 0 12px">40 incoming attacks. Dashed tiles are known families, solid-outlined tiles are zero-days.</p>
+        <div class="seg" role="group" aria-label="Detection approach">
+          <button data-sig="signature" aria-pressed="true">Signature</button>
+          <button data-sig="ml" aria-pressed="false">Supervised ML</button>
+          <button data-sig="ae" aria-pressed="false">Autoencoder</button>
+          <button data-sig="hybrid" aria-pressed="false">Hybrid</button>
+        </div>
+        <div id="sigGrid" aria-hidden="true"></div>
+        <p id="sigStat" aria-live="polite"></p>
+        <div class="legend"><span><i style="background:var(--teal)"></i>caught known</span><span><i style="background:var(--amber)"></i>caught zero-day</span><span><i style="border:1px dashed #3b4868"></i>missed</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SYSTEM -->
+<section id="system">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">// 02 · Proposed system</span><h2>Seven stages, each grounded in published work.</h2><p>Click a stage to see what it does and which paper it builds on.</p></div>
+    <div id="pipeline" class="reveal"></div>
+    <div id="pipeDetail" class="card" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- LIVE -->
+<section id="live">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">// 03 · Interactive sketch</span><h2>Watch the sensor think.</h2><p>Live traffic flows from the Internet through router, firewall and our NIDS sensor into the server farm. Launch attacks, switch detection strategies and tune the anomaly threshold. Hover any node to learn what it does.</p></div>
+    <div class="sim reveal">
+      <div class="stage">
+        <div class="stage-bar">
+          <div class="seg" role="group" aria-label="Detection mode">
+            <button data-mode="signature" aria-pressed="false">Signature</button>
+            <button data-mode="supervised" aria-pressed="false">Supervised</button>
+            <button data-mode="anomaly" aria-pressed="false">Autoencoder</button>
+            <button data-mode="hybrid" aria-pressed="true">Hybrid</button>
+          </div>
+          <div style="display:flex;gap:8px"><button class="btn" id="simPause" aria-pressed="false">Pause</button><button class="btn" id="simReset">Reset</button></div>
+        </div>
+        <canvas id="simCanvas" role="img" aria-label="Animated network topology showing packets flowing through a firewall and NIDS sensor to servers; flagged packets turn red."></canvas>
+        <div id="simTip" hidden></div>
+        <div class="sim-legend"><span><i style="background:var(--teal)"></i>normal</span><span><i style="background:var(--red)"></i>DoS</span><span><i style="background:var(--blue)"></i>Probe</span><span><i style="background:var(--amber)"></i>R2L</span><span><i style="background:var(--pink)"></i>U2R</span><span><i style="background:#fff"></i>zero-day</span><span><i style="border:1.5px solid var(--red);background:none"></i>flagged</span></div>
+        <div class="timeline"><div class="lbl"><span>Anomaly score per inspected packet</span><span class="mono">newest →</span></div><canvas id="scoreCanvas" aria-hidden="true"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="card" style="padding:16px">
+          <h3 style="font-size:15px">Launch an attack</h3>
+          <div class="attacks">
+            <button class="atk" data-attack="dos"><b>DoS</b><span>SYN flood → Web</span></button>
+            <button class="atk" data-attack="probe"><b>Probe</b><span>Port sweep → all</span></button>
+            <button class="atk" data-attack="r2l"><b>R2L</b><span>Password guess → Mail</span></button>
+            <button class="atk" data-attack="u2r"><b>U2R</b><span>Overflow → DB</span></button>
+            <button class="atk" data-attack="zero"><b>Zero-day</b><span>Never-seen technique — the real test</span></button>
+          </div>
+        </div>
+        <p id="modeNote" aria-live="polite"></p>
+        <div class="card" style="padding:16px;display:grid;gap:12px">
+          <div class="ctl"><label for="simRate">Background traffic <output id="simRateVal">8 pkt/s</output></label><input id="simRate" type="range" min="1" max="30" value="8" /></div>
+          <div class="ctl"><label for="simThr">Autoencoder threshold <output id="simThrVal">0.50</output></label><input id="simThr" type="range" min="0.2" max="0.9" step="0.01" value="0.5" /></div>
+          <div class="toggles"><label><input type="checkbox" id="simIps" checked />Inline IPS — drop flagged packets</label><label><input type="checkbox" id="simTruth" checked />Reveal ground-truth colours</label></div>
+        </div>
+        <div class="stats" aria-live="off">
+          <div class="stat"><span>Packets</span><b id="stTotal">0</b></div>
+          <div class="stat g"><span>Caught</span><b id="stTP">0</b></div>
+          <div class="stat a"><span>False alarms</span><b id="stFP">0</b></div>
+          <div class="stat r"><span>Missed</span><b id="stFN">0</b></div>
+          <div class="stat"><span>Precision</span><b id="stPrec">0%</b></div>
+          <div class="stat"><span>Recall</span><b id="stRec">0%</b></div>
+          <div class="stat"><span>Blocked</span><b id="stBlk">0</b></div>
+        </div>
+        <div class="card" style="padding:14px"><h3 style="font-size:14px">SOC alert feed</h3><ul id="alertLog" aria-live="polite" aria-label="Alert log"></ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LAB -->
+<section id="lab">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">// 04 · Dataset lab</span><h2>Train the hybrid detector — right here in your browser.</h2><p>Start with the built-in NSL-KDD-style sample (2,100+ connections, test split contains attack types never seen in training) or bring your own CSV. Nothing leaves your machine.</p></div>
+
+    <div class="lab-top reveal">
+      <div class="card">
+        <h3>1 · Choose a dataset</h3>
+        <div class="seg" role="group" aria-label="Dataset source" style="margin:8px 0 14px">
+          <button data-src="builtin" aria-pressed="true">Built-in NSL-KDD sample</button>
+          <button data-src="upload" aria-pressed="false">Upload CSV…</button>
+        </div>
+        <div id="drop" tabindex="0" role="button" aria-label="Drop a CSV file here or press to browse">
+          <b>Drop a CSV here</b><p>Header row required · one column holds the label (“normal”/“benign”/0 = normal, anything else = attack) · optional <code>split</code> column with train/test · up to 6,000 rows are sampled</p>
+          <input type="file" id="fileIn" accept=".csv,.txt,text/csv" hidden />
+        </div>
+        <details style="margin-top:10px"><summary>…or paste CSV text</summary><label class="sr-only" for="pasteArea">CSV text</label><textarea id="pasteArea" placeholder="duration,protocol,src_bytes,dst_bytes,label&#10;0,tcp,215,45076,normal&#10;0,tcp,0,0,neptune"></textarea><button class="btn" id="pasteBtn" style="margin-top:8px">Load pasted data</button></details>
+      </div>
+      <div class="card">
+        <h3>2 · Dataset at a glance</h3>
+        <p class="muted small" style="margin:0">Loaded: <b id="dsName" style="color:var(--text)"></b></p>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13.5px"><label for="labelCol">Label column</label><select id="labelCol"></select></div>
+        <div class="ds-stats">
+          <div><span>Rows used</span><b id="sRows">–</b></div>
+          <div><span>Features</span><b id="sFeat">–</b></div>
+          <div><span>Attack share</span><b id="sAtk">–</b></div>
+          <div><span>Train / test</span><b id="sSplit" style="font-size:15px">–</b></div>
+          <div><span>Unseen types</span><b id="sUnseen">–</b></div>
+        </div>
+        <p id="dsError" class="err" role="alert" hidden></p>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <div role="tablist" aria-label="Lab views">
+        <button role="tab" id="t1" aria-controls="p1" aria-selected="true">Explore</button>
+        <button role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1" data-onshow="1">Feature analysis</button>
+        <button role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1" data-onshow="1">Train &amp; evaluate</button>
+      </div>
+
+      <div role="tabpanel" id="p1" aria-labelledby="t1">
+        <div class="grid2">
+          <div><h3 id="classTitle" style="font-size:15px">Class distribution</h3><div class="chart-box"><canvas id="classChart" aria-label="Class distribution chart" role="img"></canvas></div></div>
+          <div><h3 style="font-size:15px">First 12 rows</h3><div class="table-wrap"><table id="preview"></table></div></div>
+        </div>
+      </div>
+
+      <div role="tabpanel" id="p2" aria-labelledby="t2" hidden>
+        <div class="grid2">
+          <div><h3 style="font-size:15px">Top features by mutual information</h3><p class="muted small" style="margin:0 0 8px">How many bits of uncertainty about “attack vs normal” each feature removes (Ambusaidi et al., 2016).</p><div class="chart-box lg"><canvas id="miChart" role="img" aria-label="Mutual information ranking"></canvas></div></div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="font-size:15px;margin:0">Normal vs attack distribution</h3><label class="sr-only" for="featSel">Feature</label><select id="featSel"></select></div>
+            <div class="chart-box" style="margin-top:10px"><canvas id="histChart" role="img" aria-label="Feature histogram by class"></canvas></div>
+            <div id="mwOut" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+
+      <div role="tabpanel" id="p3" aria-labelledby="t3" hidden>
+        <div class="train-ctl">
+          <div class="ctl"><label for="kFeat">Top-k MI features <output id="kFeatVal">20</output></label><input id="kFeat" type="range" min="3" max="40" value="20" /></div>
+          <div class="ctl"><label for="nTrees">Random-forest trees</label><select id="nTrees"><option>10</option><option selected>25</option><option>40</option></select></div>
+          <div class="ctl"><label for="aeThr">AE threshold (normal pct.) <output id="aeThrVal">p95</output></label><input id="aeThr" type="range" min="80" max="99.5" step="0.5" value="95" /></div>
+          <div class="ctl"><label for="fusion">Hybrid rule</label><select id="fusion"><option value="or">RF OR Autoencoder</option><option value="and">RF AND Autoencoder</option></select></div>
+          <button class="btn primary" id="trainBtn">Train 3 models</button>
+        </div>
+        <div class="progress" aria-hidden="true"><div id="trainProg"></div></div>
+        <p id="trainStatus" aria-live="polite">Logistic regression, a 25-tree random forest and an autoencoder (normal traffic only) are trained from scratch in JavaScript.</p>
+
+        <div id="trainEmpty" class="empty" style="margin-top:18px">Press <b>Train 3 models</b> to see precision, recall, unseen-attack recall, confusion matrices and per-connection explanations.</div>
+        <div id="trainOut" hidden style="margin-top:18px;display:grid;gap:22px">
+          <div class="grid2">
+            <div><h3 style="font-size:15px">Model comparison (held-out test set)</h3><div class="chart-box"><canvas id="cmpChart" role="img" aria-label="Model comparison chart"></canvas></div></div>
+            <div><h3 style="font-size:15px">Metrics</h3><div class="table-wrap"><table><thead><tr><th>Model</th><th>Acc.</th><th>Prec.</th><th>Recall</th><th>F1</th><th>Unseen recall</th></tr></thead><tbody id="metricsBody"></tbody></table></div><div id="unseenNote" class="note" hidden></div></div>
+          </div>
+          <div class="grid2">
+            <div><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="font-size:15px;margin:0">Confusion matrix</h3><label class="sr-only" for="cmModel">Model</label><select id="cmModel"><option>Hybrid</option><option>Random Forest</option><option>Logistic Reg.</option><option>Autoencoder</option></select></div><div id="cm"></div></div>
+            <div><h3 style="font-size:15px">Autoencoder reconstruction error</h3><p class="muted small mono" id="thrLabel" style="margin:0 0 6px"></p><div class="chart-box sm"><canvas id="errChart" role="img" aria-label="Reconstruction error histogram"></canvas></div></div>
+          </div>
+          <div class="grid2">
+            <div><h3 style="font-size:15px">Autoencoder learning curve</h3><div class="chart-box sm"><canvas id="lossChart" role="img" aria-label="Autoencoder loss curve"></canvas></div></div>
+            <div><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="font-size:15px;margin:0">Inspect a connection</h3><div style="display:flex;gap:6px"><button class="btn" id="pickConn" style="padding:6px 12px;font-size:13px">Random</button><button class="btn" id="pickAttack" style="padding:6px 12px;font-size:13px">Random attack</button></div></div><div id="connOut" style="margin-top:12px" aria-live="polite"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONCEPTS -->
+<section id="concepts">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">// 05 · Key ML concepts</span><h2>The ideas doing the heavy lifting.</h2></div>
+    <div class="grid2" style="margin-bottom:18px">
+      <div class="card concept reveal">
+        <span class="k">Precision vs recall · interactive</span>
+        <h3>Move the threshold, feel the trade-off.</h3>
+        <p>Precision: of everything flagged, how much was really an attack. Recall: of all real attacks, how many we caught. A missed attack costs more than a false alarm, so <b>recall is prioritised</b>.</p>
+        <canvas id="prCanvas" role="img" aria-label="Dots for normal and attack connections along an anomaly score axis with a movable threshold"></canvas>
+        <div class="ctl" style="margin-top:10px"><label for="prThr">Threshold <output id="prThrVal">0.50</output></label><input id="prThr" type="range" min="0.05" max="0.95" step="0.01" value="0.5" /></div>
+        <div class="pr-out"><div><span>Precision</span><b id="prP"></b></div><div><span>Recall</span><b id="prR" style="color:var(--teal)"></b></div><div><span>F1</span><b id="prF"></b></div></div>
+        <p class="muted small mono" id="prCounts" style="margin-top:8px"></p>
+      </div>
+      <div style="display:grid;gap:18px">
+        <div class="card concept reveal"><span class="k">Supervised vs unsupervised</span><h3>Learning attacks vs learning normal</h3><p>LR, Random Forest and XGBoost learn from labelled examples — strong on known attacks. The autoencoder learns only “normal” and flags anything unfamiliar.</p></div>
+        <div class="card concept reveal"><span class="k">Autoencoder reconstruction error</span><h3>Compress, rebuild, compare</h3><p>A network trained to squeeze normal traffic through a bottleneck and rebuild it. Attack traffic rebuilds poorly — that error is the anomaly signal (Xu et al., 2021).</p><div class="formula">score(x) = ‖x − decoder(encoder(x))‖² / d</div></div>
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="card concept reveal"><span class="k">Mutual information</span><h3>Ranking 41 features</h3><p>How much knowing one feature reduces uncertainty about the label.</p><div class="formula">I(X;Y) = Σ p(x,y) log p(x,y) / p(x)p(y)</div></div>
+      <div class="card concept reveal"><span class="k">Cross-validation</span><h3>5-fold CV</h3><p>Train on four folds, validate on the fifth, rotate. Confirms results aren’t a fluke of one particular split.</p><div class="formula">score = mean(fold₁ … fold₅) ± sd</div></div>
+      <div class="card concept reveal"><span class="k">Mann-Whitney U</span><h3>Is the difference real?</h3><p>Non-parametric test that normal and attack traffic differ on a feature by more than chance (p &lt; 0.05). Live per-feature in the Lab.</p><div class="formula">U = R₁ − n₁(n₁+1)/2</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section id="results">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">// 06 · Preliminary results</span><h2>The safety net works.</h2><p>Executed notebook on the official NSL-KDD test set, measuring recall on the attack types that never appeared in training.</p></div>
+    <div class="res-grid">
+      <div class="card reveal"><h3 style="font-size:15px">Recall on never-before-seen attacks</h3><div class="chart-box sm"><canvas id="reviewChart" role="img" aria-label="Supervised models catch 27 to 47 percent of unseen attacks; the autoencoder catches 78 percent"></canvas></div></div>
+      <div class="card reveal" style="display:flex;flex-direction:column;justify-content:center;gap:10px">
+        <span class="big-num">78%</span>
+        <p style="margin:0;font-size:17px;color:#c0c9db">of never-before-seen attacks caught by the autoencoder, versus <b style="color:var(--blue)">27–47%</b> for the supervised models.</p>
+        <p class="muted small" style="margin:0">Supervised models still dominate on known families — which is exactly why the system fuses both tracks instead of choosing one.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESEARCH -->
+<section id="research">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">// 07 · Research frontier</span><h2>Where the field is heading (2021 → 2025).</h2><p>Recent papers that shape our next steps — graph-based self-supervision, LLM-assisted analysis, dataset hygiene and privacy-preserving training. Expand a card to see how it applies to this project.</p></div>
+    <div id="paperFilters" role="group" aria-label="Filter by topic"></div>
+    <div id="papers"></div>
+  </div>
+</section>
+
+<!-- JOURNEY -->
+<section id="journey">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">// 08 · Project journey &amp; work experience</span><h2>What we built, what we learned.</h2><p>The path from literature review to a working hybrid detector — and the roadmap beyond the mid review.</p></div>
+    <div class="journey">
+      <div class="step reveal"><div class="card"><div><span class="ph">Phase 01</span><h3>Literature &amp; problem framing</h3></div><ul><li>Surveyed signature vs anomaly IDS</li><li>Chose NSL-KDD for its de-duplicated records and unseen-attack test split</li></ul><div class="lesson"><b>Lesson</b><p>Headline accuracy hides failure on rare classes — define success as recall on unseen attacks.</p></div></div></div>
+      <div class="step reveal"><div class="card"><div><span class="ph">Phase 02</span><h3>Data engineering &amp; EDA</h3></div><ul><li>Encoded protocol / service / flag</li><li>Log-scaled byte counts, train-only normalisation</li><li>Mann-Whitney U tests per feature</li></ul><div class="lesson"><b>Lesson</b><p>Fitting the scaler on all data leaks test information — a classic pitfall (Arp et al., 2022).</p></div></div></div>
+      <div class="step reveal"><div class="card"><div><span class="ph">Phase 03</span><h3>Feature selection &amp; supervised models</h3></div><ul><li>Mutual-information ranking of all 41 features</li><li>LR, Random Forest, XGBoost with 5-fold CV</li></ul><div class="lesson"><b>Lesson</b><p>Trees excel on DoS / Probe, but R2L and U2R are rare and easily confused with normal sessions.</p></div></div></div>
+      <div class="step reveal"><div class="card"><div><span class="ph">Phase 04</span><h3>Autoencoder safety net</h3></div><ul><li>Trained on normal traffic only</li><li>Threshold from normal reconstruction-error percentile</li></ul><div class="lesson"><b>Lesson</b><p>Unsupervised detection lifted unseen-attack recall from 27–47% to 78%.</p></div></div></div>
+      <div class="step now reveal"><div class="card"><div><span class="ph">21-09-2026 · Now</span><h3>Data Science mid review</h3></div><p>Executed notebook, results and this interactive lab presented to the panel.</p><div class="lesson"><b>Takeaway</b><p>The hybrid design is validated; the open question is generalisation to modern traffic.</p></div></div></div>
+      <div class="step next reveal"><div class="card"><div><span class="ph">Next</span><h3>Roadmap</h3></div><ul><li>Per-prediction SHAP explanations</li><li>Re-run on CICIDS2017 / 2018 (corrected releases) for DDoS &amp; botnets</li><li>Kafka streaming scorer for near real-time detection</li></ul><ul><li>LSTM variant to exploit session order</li><li>OR-ensemble rule across both tracks</li><li>Explore graph-based (GraphIDS / E-GraphSAGE) flow models</li></ul></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- REFS -->
+<section id="refs-sec">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">// 09 · References</span><h2>Sources.</h2><p>Core references from the review deck plus recent literature. Dataset: <a href="https://www.unb.ca/cic/datasets/nsl.html" target="_blank" rel="noopener">unb.ca/cic/datasets/nsl.html</a> (mirror: github.com/defcom17/NSL_KDD).</p></div>
+    <div id="refs"></div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap">NIDS Lab · Sharanya V, Sannidhi M, Rishitha G C · The built-in dataset is a synthetic sample that mimics NSL-KDD’s feature distributions and unseen-attack test split; the 78% / 27–47% figures come from the team’s executed notebook on the real NSL-KDD test set.<div class="small kbd-hint">Tip: press <kbd>1</kbd>–<kbd>9</kbd> to jump between sections, <kbd>0</kbd> for the top.</div></div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="./ml.js"></script>
+<script src="./sim.js"></script>
+<script src="./app.js"></script>
+<script src="./fx.js"></script>
+<script>
+/* scroll progress bar + hue that drifts teal -> blue -> violet -> pink as you scroll */
+(function(){
+  var bar=document.getElementById('scrollBar'),root=document.documentElement,ticking=false;
+  function update(){
+    var max=root.scrollHeight-window.innerHeight,p=max>0?Math.min(1,Math.max(0,window.scrollY/max)):0;
+    bar.style.transform='scaleX('+p+')';
+    root.style.setProperty('--hue',Math.round(165+p*150)); /* 165 (teal) -> 315 (pink) */
+    ticking=false;
+  }
+  window.addEventListener('scroll',function(){if(!ticking){ticking=true;requestAnimationFrame(update);}},{passive:true});
+  window.addEventListener('resize',update);
+  update();
+})();
+</script>
+</body>
+</html>

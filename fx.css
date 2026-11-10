@@ -1,0 +1,140 @@
+/* NIDS Lab — motion & interaction layer (loaded after the main stylesheet) */
+
+/* ---------- smooth scrolling engine hooks ---------- */
+html.fx-js{scroll-behavior:auto}
+::selection{background:rgba(255,181,71,.35);color:#fff}
+
+/* ---------- cursor glow ---------- */
+.fx-glow{position:fixed;left:0;top:0;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;pointer-events:none;z-index:0;opacity:0;transition:opacity .6s;
+  background:radial-gradient(circle,hsl(var(--hue,165) 85% 60%/.11),transparent 65%);will-change:transform}
+.fx-glow.on{opacity:1}
+
+/* ---------- nav: sliding pill + scrolled state ---------- */
+.nav{transition:background .4s,box-shadow .4s}
+.nav .wrap{transition:height .35s cubic-bezier(.2,.7,.2,1)}
+.nav.scrolled{background:rgba(16,21,32,.9);box-shadow:0 10px 30px -12px rgba(0,0,0,.55)}
+.nav.scrolled .wrap{height:50px}
+.nav ul{position:relative}
+.nav a{position:relative;z-index:1}
+.nav a.active{background:transparent}
+.fx-pill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px;background:var(--teal);opacity:0;pointer-events:none;
+  transition:transform .5s cubic-bezier(.3,1.3,.5,1),width .5s cubic-bezier(.3,1.3,.5,1),opacity .3s}
+
+/* ---------- hero: entrance, parallax, shimmer ---------- */
+.hero{--px:0;--py:0;--hs:0}
+@keyframes heroIn{from{opacity:0;translate:0 26px;filter:blur(8px)}}
+@keyframes termIn{from{opacity:0;scale:.9}}
+@keyframes shimmer{to{background-position:100% 0}}
+.hero-copy>*{animation:heroIn .9s cubic-bezier(.2,.7,.2,1) both}
+.hero-copy>:nth-child(1){animation-delay:.05s}.hero-copy>:nth-child(2){animation-delay:.17s}.hero-copy>:nth-child(3){animation-delay:.3s}
+.hero-copy>:nth-child(4){animation-delay:.42s}.hero-copy>:nth-child(5){animation-delay:.54s}
+.hero .kpi{animation:heroIn .8s cubic-bezier(.2,.7,.2,1) both}
+.hero .kpi:nth-child(1){animation-delay:.6s}.hero .kpi:nth-child(2){animation-delay:.7s}.hero .kpi:nth-child(3){animation-delay:.8s}.hero .kpi:nth-child(4){animation-delay:.9s}
+.hero h1 em{background-size:220% 100%;animation:shimmer 5s ease-in-out infinite alternate}
+.hero-copy{translate:0 calc(var(--hs)*-46px);opacity:calc(1 - var(--hs)*.85)}
+.term{animation:termIn 1s .35s cubic-bezier(.2,.7,.2,1) both;
+  translate:calc(var(--px)*-18px) calc(var(--py)*-12px + var(--hs)*-30px);transition:translate .5s ease-out,transform .3s ease-out}
+#heroCanvas{scale:1.08;translate:calc(var(--px)*10px) calc(var(--py)*8px + var(--hs)*40px);transition:translate .6s ease-out}
+
+/* ---------- terminal: live feed ---------- */
+.term-body{height:236px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:9px}
+.term-body li{opacity:1;animation:feed .45s cubic-bezier(.2,.7,.2,1) both;cursor:pointer;border-radius:6px;padding:1px 4px;margin:0 -4px;transition:background .2s}
+.term-body li:nth-child(n){animation-delay:0s}
+.term-body li:hover{background:rgba(255,255,255,.05)}
+.term-body li small{display:none;color:var(--muted);margin-top:4px;padding-left:62px;white-space:normal;font-size:11.5px;line-height:1.45}
+.term-body li.open{white-space:normal}
+.term-body li.open small{display:block;animation:swap .3s ease}
+.term-body li.zero-row{background:rgba(255,181,71,.08);box-shadow:inset 2px 0 0 var(--amber)}
+.term-foot{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:11px 14px;border-top:1px solid var(--border);background:rgba(35,43,61,.45);font-size:11.5px;color:var(--muted)}
+.term-foot b{color:var(--text);font-weight:600}
+.term-foot .live{display:inline-flex;align-items:center;gap:6px;color:var(--teal)}
+.term-foot .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--teal);animation:pulse 1.6s infinite}
+.term-btn{margin-left:auto;border:1px solid rgba(255,181,71,.45);background:rgba(255,181,71,.1);color:var(--amber);border-radius:999px;padding:5px 12px;font-size:11.5px;cursor:pointer;font-family:var(--mono);
+  translate:var(--bx,0px) var(--by,0px);transition:translate .25s ease-out,background .2s,transform .2s}
+.term-btn:hover{background:rgba(255,181,71,.2)}.term-btn:active{transform:scale(.95)}
+
+/* ---------- tilt + spotlight ---------- */
+.term,.paper,.hero .kpi{--rx:0deg;--ry:0deg}
+.term{transform:perspective(900px) rotate(1.2deg) rotateX(var(--rx)) rotateY(var(--ry))}
+.paper,.paper:hover{transition:transform .28s ease-out,border-color .3s}
+.paper{transform:perspective(900px) rotateX(var(--rx)) rotateY(var(--ry))}
+.paper:hover{transform:perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(-3px)}
+.hero .kpi{transform:perspective(700px) rotateX(var(--rx)) rotateY(var(--ry));transition:transform .28s ease-out,border-color .3s}
+.card,.paper,.hero .kpi,.pipe-step{position:relative}
+.card::before,.paper::before,.hero .kpi::before,.pipe-step::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .35s;
+  background:radial-gradient(280px circle at var(--mx,50%) var(--my,50%),rgba(255,181,71,.10),transparent 65%)}
+.card:hover::before,.paper:hover::before,.hero .kpi:hover::before,.pipe-step:hover::before{opacity:1}
+.card,.concept,.paper{transition:border-color .3s,box-shadow .3s}
+.card:hover,.paper:hover{border-color:#3e4c6d;box-shadow:0 18px 40px -22px rgba(0,0,0,.7)}
+
+/* ---------- buttons: magnetic, shine, ripple ---------- */
+.btn,.atk,.chip,[role=tab],.seg button,.copy{position:relative;overflow:hidden}
+.cta .btn{translate:var(--bx,0px) var(--by,0px);transition:translate .25s ease-out,transform .2s,background .2s,border-color .2s}
+.btn:active{transform:scale(.97)}
+.btn::before{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-20deg);transition:left .7s ease;pointer-events:none}
+.btn:hover::before{left:130%}
+.fx-ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.32);transform:scale(0);animation:ripple .65s ease-out forwards;pointer-events:none}
+@keyframes ripple{to{transform:scale(1);opacity:0}}
+.chip,[role=tab],.seg button{transition:background .25s,color .25s,border-color .25s,transform .2s}
+.chip:active,.atk:active{transform:scale(.96)}
+
+/* ---------- richer reveal ---------- */
+.reveal{filter:blur(5px);transition:opacity .85s cubic-bezier(.2,.7,.2,1),transform .85s cubic-bezier(.2,.7,.2,1),filter .85s;transition-delay:var(--rd,0ms)}
+.reveal.in{filter:none}
+.reveal.rd-done{transition-delay:0ms}
+.sec-head h2{position:relative;padding-bottom:14px}
+.sec-head h2::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:0;border-radius:3px;background:linear-gradient(90deg,var(--scroll-accent),transparent);transition:width 1.1s .3s cubic-bezier(.2,.7,.2,1)}
+.sec-head.in h2::after{width:96px}
+.sec-head .eyebrow{display:inline-block;transition:letter-spacing .9s cubic-bezier(.2,.7,.2,1),opacity .6s;letter-spacing:.3em;opacity:.4}
+.sec-head.in .eyebrow{letter-spacing:.14em;opacity:1}
+@keyframes popIn{from{opacity:0;translate:0 22px;scale:.94}}
+#pipeline:not(.fx-in) .pipe-step{opacity:0}
+#pipeline.fx-in .pipe-step{animation:popIn .65s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*80ms)}
+[role=tabpanel]:not([hidden]){animation:swap .45s cubic-bezier(.2,.7,.2,1)}
+
+/* ---------- back-to-top, toast ---------- */
+.fx-top{position:fixed;right:22px;bottom:22px;width:48px;height:48px;border-radius:50%;border:0;background:rgba(28,35,50,.92);color:var(--text);cursor:pointer;z-index:60;display:grid;place-items:center;
+  box-shadow:0 10px 30px -8px rgba(0,0,0,.7);opacity:0;translate:0 16px;pointer-events:none;transition:opacity .35s,translate .35s,background .2s}
+.fx-top.show{opacity:1;translate:0 0;pointer-events:auto}
+.fx-top:hover{background:var(--surface2)}
+.fx-top svg{position:absolute;inset:2px;width:44px;height:44px;transform:rotate(-90deg)}
+.fx-top circle{fill:none;stroke-width:2.5}
+.fx-top .trk{stroke:rgba(147,160,184,.2)}
+.fx-top .bar{stroke:var(--teal);stroke-linecap:round;stroke-dasharray:119.4;stroke-dashoffset:119.4}
+.fx-top span{position:relative;font-size:18px;line-height:1;transition:translate .25s}
+.fx-top:hover span{translate:0 -2px}
+.fx-toast{position:fixed;left:50%;bottom:30px;translate:-50% 20px;opacity:0;z-index:70;padding:9px 16px;border-radius:999px;background:rgba(14,19,30,.94);border:1px solid var(--border);color:var(--text);font-size:13px;font-family:var(--mono);pointer-events:none;transition:opacity .3s,translate .3s}
+.fx-toast.show{opacity:1;translate:-50% 0}
+.fx-toast kbd{color:var(--amber)}
+.kbd-hint{margin-top:10px}
+.kbd-hint kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--surface);color:var(--text)}
+
+/* ---------- reduced motion: switch the whole layer off ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0ms!important}
+  .reveal{filter:none}.fx-glow{display:none}
+  .hero-copy,.term,#heroCanvas{translate:none;opacity:1}
+}
+@media (max-width:1000px){.term{translate:none}.hero-copy{translate:none}}
+@media (hover:none){.fx-glow{display:none}}
+
+/* ---------- repairs: Dataset lab layout ---------- */
+/* 1fr columns grow to fit a wide table and push it out of its card; minmax(0,1fr) lets them shrink and the table scroll inside */
+.grid2>*,.grid3>*,#papers>*,.kpis>*{min-width:0}
+/* tab bar: tabs overhang by 1px, which created a stray vertical scrollbar */
+[role=tablist]{overflow-x:auto;overflow-y:hidden;border-bottom:0;box-shadow:inset 0 -1px 0 var(--border);scrollbar-width:none}
+[role=tablist]::-webkit-scrollbar{display:none}
+[role=tab]{margin-bottom:0}
+/* sticky table header: separate borders so rows no longer slide under it */
+table{border-collapse:separate;border-spacing:0}
+thead th{z-index:2;box-shadow:inset 0 -1px 0 var(--border)}
+.table-wrap{overscroll-behavior:contain;background:var(--bg2)}
+.table-wrap tbody tr{transition:background .2s}
+.table-wrap tbody tr:hover{background:rgba(255,181,71,.06)}
+/* dark scrollbars everywhere (replaces the bright default widgets) */
+*{scrollbar-width:thin;scrollbar-color:#3b4768 transparent}
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:#3b4768;border-radius:9px;border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-thumb:hover{background:#56648c;background-clip:content-box}
+*::-webkit-scrollbar-corner{background:transparent}
